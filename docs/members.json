@@ -1,4 +1,10 @@
 {
   "schema": 1,
-  "members": []
+  "members": [
+    {
+      "login": "Min-heee",
+      "gist": "78e88870d7be73488f1182b834f6e2d7",
+      "joinedAt": "2026-10-14T10:30:00.095Z"
+    }
+  ]
 }
