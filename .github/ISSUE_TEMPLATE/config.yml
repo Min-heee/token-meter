@@ -1,0 +1,10 @@
+# 이슈 고르는 화면. 버그 제보 같은 보통 이슈도 열 수 있게 빈 이슈는 켜 둔다
+# (제목이 join/leave 가 아니면 봇은 손대지 않는다).
+blank_issues_enabled: true
+contact_links:
+  - name: 순위판 보기 · Leaderboard
+    url: https://min-heee.github.io/token-meter/
+    about: 지금 순위 · Current standings
+  - name: 무엇이 공개되나요 · What is published
+    url: https://min-heee.github.io/token-meter/privacy.html
+    about: 숫자만 올라가요 — 올라가는 칸 전부 · Numbers only — every published field

@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>토큰 계량기</title>
+<meta name="description" content="Claude Code · Codex · Gemini CLI 토큰 사용량 순위 — 숫자만, 서버 없이 GitHub gist 로">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body,h1,h2,h3,p,pre,figure,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+button,input,textarea{font:inherit;color:inherit}
+img,svg{display:block;max-width:100%}
+
+:root{
+  --ground:#EDF1EF; --panel:#FFFFFF; --sunk:#E2E8E5;
+  --ink:#101715; --ink-2:#4B5955; --ink-3:#7B8A85;
+  --rule:#D2D9D6; --rule-2:#BFC8C4;
+  --a1:#0B6E5F; --a2:#3E8E7E; --a3:#74AFA3; --a4:#A9CCC4;
+  --heat:#B0451A; --heat-bg:#F6E7DF;
+  --seat:#FFFFFF;
+  --shade:rgba(11,110,95,.07);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1211; --panel:#141C1A; --sunk:#1B2523;
+    --ink:#E7EEEB; --ink-2:#93A29D; --ink-3:#6D7C77;
+    --rule:#232E2B; --rule-2:#31403C;
+    --a1:#3FC7A9; --a2:#2E9C86; --a3:#227263; --a4:#1B4B43;
+    --heat:#F08A4B; --heat-bg:#2A1A11;
+    --seat:#141C1A;
+    --shade:rgba(63,199,169,.09);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1211; --panel:#141C1A; --sunk:#1B2523;
+  --ink:#E7EEEB; --ink-2:#93A29D; --ink-3:#6D7C77;
+  --rule:#232E2B; --rule-2:#31403C;
+  --a1:#3FC7A9; --a2:#2E9C86; --a3:#227263; --a4:#1B4B43;
+  --heat:#F08A4B; --heat-bg:#2A1A11;
+  --seat:#141C1A;
+  --shade:rgba(63,199,169,.09);
+}
+
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  font-size:15px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--a1)}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px 96px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.boot{padding:56px 0;color:var(--ink-3);font-size:14px}
+
+/* ── 마스트헤드 ─────────────────────────────── */
+.mast{padding:40px 0 22px;border-bottom:2px solid var(--ink)}
+.mast-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px}
+.brand{display:flex;flex-direction:column;gap:6px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)
+}
+h1{
+  font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-weight:800;
+  font-size:clamp(34px,6.2vw,54px);line-height:.94;letter-spacing:-.025em;
+  text-wrap:balance
+}
+.meter{text-align:right}
+.meter-label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.meter-read{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;
+  font-size:clamp(26px,4.6vw,38px);line-height:1.05;letter-spacing:-.02em;
+  color:var(--a1);font-variant-numeric:tabular-nums
+}
+.meter-sub{font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.langbtn{
+  background:transparent;border:1px solid var(--rule-2);color:var(--ink-2);
+  padding:2px 8px;font-size:10px;letter-spacing:.06em;margin-top:6px;cursor:pointer
+}
+.langbtn:hover{color:var(--ink);border-color:var(--ink-3)}
+
+/* ── 참가하기 ──────────────────────────────── */
+.intake{background:var(--sunk);border-bottom:1px solid var(--rule)}
+.intake-in{max-width:1120px;margin:0 auto;padding:18px 20px 16px;display:grid;gap:12px}
+.join-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.join-h{font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-weight:800;font-size:17px;letter-spacing:-.01em}
+.join-why{font-size:12.5px;color:var(--ink-2);flex:1 1 320px;min-width:0}
+.join-steps{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:10px}
+.step{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px;background:var(--panel);border:1px solid var(--rule);padding:12px 14px 13px;min-width:0}
+.step-n{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--a1);font-size:14px;line-height:1.5}
+.step-body{min-width:0}
+.step-t{font-weight:600;font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.step-note{font-size:12px;color:var(--ink-2);margin-top:7px}
+.cmdrow{display:flex;gap:8px;margin-top:8px;align-items:stretch;min-width:0}
+.cmd{
+  flex:1 1 auto;min-width:0;background:var(--sunk);border:1px solid var(--rule-2);
+  padding:9px 11px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;
+  white-space:pre;overflow-x:auto;color:var(--ink);user-select:all;-webkit-user-select:all
+}
+.oschoice{display:inline-flex;gap:0;border:1px solid var(--rule-2)}
+.oschoice button{background:transparent;border:0;color:var(--ink-3);padding:2px 8px;font-size:10px;letter-spacing:.06em;cursor:pointer;font-weight:500}
+.oschoice button[aria-pressed="true"]{background:var(--a1);color:var(--seat)}
+button{
+  border:1px solid var(--ink);background:var(--ink);color:var(--ground);
+  padding:11px 18px;border-radius:0;font-weight:600;font-size:14px;cursor:pointer;
+  transition:opacity .12s ease
+}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--rule-2)}
+button.copy{padding:8px 14px;font-size:13px;flex:0 0 auto}
+button:hover{opacity:.82}
+button:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--a1);outline-offset:2px}
+.linky{background:transparent;border:0;color:var(--ink-3);font-size:inherit;text-decoration:underline;cursor:pointer;padding:0;font-weight:inherit}
+.note{font-size:12px;color:var(--ink-2)}
+.note.err{color:var(--heat);font-weight:500}
+.note.ok{color:var(--a1);font-weight:500}
+
+/* ── 정렬 ─────────────────────────────────── */
+.bar{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;padding:26px 0 10px}
+.segs{display:flex;flex-wrap:wrap;border:1px solid var(--rule-2)}
+.segs button{
+  background:transparent;color:var(--ink-2);border:0;border-right:1px solid var(--rule-2);
+  padding:7px 14px;font-size:13px;font-weight:500
+}
+.segs button:last-child{border-right:0}
+.segs button[aria-pressed="true"]{background:var(--a1);color:var(--seat);font-weight:600}
+.units{display:flex;flex-wrap:wrap;gap:2px}
+.units button{
+  background:transparent;border:0;border-bottom:2px solid transparent;color:var(--ink-3);
+  padding:6px 9px;font-size:12.5px;font-weight:500
+}
+.units button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--a1);font-weight:600}
+.subbar{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;padding-bottom:12px}
+.subbar-r{display:flex;flex-wrap:wrap;gap:4px 14px}
+.count{font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+
+/* ── 순위 행 ───────────────────────────────── */
+.rows{border-top:1px solid var(--ink)}
+.row{border-bottom:1px solid var(--rule);background:transparent}
+.row.lead{background:var(--shade)}
+.row-head{
+  display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:16px;align-items:center;
+  padding:16px 12px 16px 4px;cursor:pointer;width:100%;text-align:left;
+  background:transparent;border:0;color:inherit;font-weight:inherit
+}
+.row-head:hover{background:var(--shade);opacity:1}
+.rank{
+  font-family:Archivo,sans-serif;font-weight:800;font-size:30px;line-height:1;
+  color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:right
+}
+.row.lead .rank{color:var(--heat)}
+.who{min-width:0;display:flex;flex-direction:column;gap:7px}
+.name{font-size:17px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.login{overflow-wrap:anywhere;min-width:0}
+.ava{width:18px;height:18px;border-radius:50%;display:inline-block;vertical-align:-3px;margin-right:8px;background:var(--sunk)}
+.tag{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--heat);color:var(--heat);background:var(--heat-bg);padding:1px 6px
+}
+.src{
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;font-weight:500;
+  padding:1px 6px;border:1px solid var(--rule-2);color:var(--ink-2)
+}
+.src-claude{border-color:var(--a3);color:var(--a1)}
+.src-gemini{border-style:dashed}
+.src.stale{border-style:dashed;color:var(--ink-3)}
+.src.stale.old{border-style:solid;border-color:var(--heat);color:var(--heat)}
+.mixnote{
+  font-size:12.5px;line-height:1.6;color:var(--ink-2);background:var(--sunk);
+  padding:10px 13px;margin-bottom:14px
+}
+.mixnote b{color:var(--ink);font-weight:600}
+/* 모델 이름·시간대는 남이 정한 글자다 — 띄어쓰기 없는 긴 이름도 줄 안에서 끊는다(모바일 가로 넘침 방지) */
+.meta{font-size:12px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace;font-weight:400;overflow-wrap:anywhere;min-width:0}
+.meta b{font-weight:600;color:var(--ink)}
+.track{height:11px;background:var(--sunk);position:relative;overflow:hidden}
+.track>i{display:block;height:100%;background:var(--a1)}
+.strip{display:flex;height:7px;gap:1px;margin-top:4px}
+.strip>i{display:block;min-width:2px}
+.s-out{background:var(--a1)} .s-in{background:var(--a2)} .s-cw{background:var(--a3)} .s-cr{background:var(--a4)}
+.read{text-align:right;display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+.read-big{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:clamp(19px,3vw,25px);
+  line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums
+}
+.read-sub{font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-weight:400}
+.more{width:100%;margin-top:10px}
+
+/* ── 상세 ─────────────────────────────────── */
+.detail{padding:4px 12px 24px 60px;display:grid;gap:22px}
+.dsec{display:grid;gap:9px}
+.dtitle{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+.dlinks{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+.dlinks>*{min-width:0;overflow-wrap:anywhere}
+.dnote{font-size:12px;color:var(--ink-2)}
+.facts{display:flex;flex-wrap:wrap;border-top:1px solid var(--rule);border-left:1px solid var(--rule)}
+.fact{flex:1 1 136px;border-bottom:1px solid var(--rule);border-right:1px solid var(--rule);padding:10px 12px 11px;min-width:0}
+.fact-k{font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;letter-spacing:.06em}
+.fact-v{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:17px;letter-spacing:-.01em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.mtable{width:100%;border-collapse:collapse;font-size:13px}
+.mtable th{
+  text-align:left;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;font-weight:500;padding:0 10px 6px 0;border-bottom:1px solid var(--rule)
+}
+.mtable th.r,.mtable td.r{text-align:right}
+.mtable td{padding:7px 10px 7px 0;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.mtable td.m{font-family:"IBM Plex Mono",monospace}
+.scroll{overflow-x:auto}
+.spark{display:flex;align-items:flex-end;gap:1px;height:52px;border-bottom:1px solid var(--rule-2)}
+.spark>i{flex:1 1 0;min-width:1px;background:var(--a2);display:block}
+.spark>i.peak{background:var(--heat)}
+.spark-x{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;padding-top:4px}
+
+/* ── 읽지 못한 참가자 ──────────────────────── */
+.failnote{font-size:12px;line-height:1.7;color:var(--ink-2);padding:14px 0 0;overflow-wrap:anywhere}
+.failnote b{color:var(--heat);font-weight:600}
+.failnote a{color:inherit}
+.failnote .why{color:var(--ink-3)}
+
+/* ── 빈 상태 / 각주 ───────────────────────── */
+.empty{padding:56px 12px;text-align:center;color:var(--ink-2);border-bottom:1px solid var(--rule)}
+.empty h2{font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-size:22px;font-weight:800;color:var(--ink);margin-bottom:8px;letter-spacing:-.01em}
+.empty button{margin-top:16px}
+code{font-family:"IBM Plex Mono",monospace;font-size:.92em;background:var(--sunk);padding:1px 5px;overflow-wrap:anywhere}
+.step code{background:var(--ground)}
+footer{padding-top:30px;font-size:12.5px;color:var(--ink-2);display:grid;gap:8px;max-width:74ch}
+footer b{color:var(--ink);font-weight:600}
+.equiv-sec{padding:26px 0 4px;border-top:1px solid var(--rule);margin-top:26px}
+.equiv-h{
+  font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-weight:800;font-size:20px;
+  letter-spacing:-.015em;margin-bottom:14px
+}
+.equiv{display:grid;gap:18px}
+.equiv-note{font-size:11.5px;line-height:1.55;color:var(--ink-3);margin-top:2px;max-width:80ch}
+.detail .equiv{gap:14px}
+.detail .equiv-note{font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;padding:10px 0 2px;font-size:12px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;display:block}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px 72px}
+  .intake-in{padding:16px}
+  .join-steps{grid-template-columns:minmax(0,1fr)}
+  .meter{text-align:left}
+  .row-head{grid-template-columns:36px minmax(0,1fr);gap:12px}
+  .rank{font-size:22px}
+  .read{grid-column:2;align-items:flex-start;text-align:left;margin-top:2px}
+  .detail{padding-left:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="root"><p class="boot">순위를 불러오는 중… · Loading…</p></div></div>
+<noscript><div class="wrap"><p class="boot">이 순위판은 자바스크립트가 필요합니다. · This leaderboard needs JavaScript.</p></div></noscript>
+<script type="module">
+// 토큰 계량기 — 순위판 페이지 (GitHub Pages, 서버 없음)
+// 명단(members.json)과 참가자마다의 공개 gist 를 board.mjs 가 브라우저에서 직접 읽는다.
+// 이 페이지는 아무것도 보내지 않는다 — 저장하는 건 언어 선택(localStorage) 하나뿐.
+import { loadBoard, rank, measure, periodRange, staleDays } from "./board.mjs";
+
+const REPO = "Min-heee/token-meter";
+const COLLECTOR = `https://raw.githubusercontent.com/${REPO}/main/collect.mjs`;
+const JOIN_FORM = `https://github.com/${REPO}/issues/new?template=join.yml&title=join`;
+const PAGE = 100;   // 한 번에 그리는 줄 수 — 명단은 2000명까지 갈 수 있다
+
+// ── i18n ──────────────────────────────────────────────────────────────
+const DICT = {
+  en: {
+    eyebrow: "Claude Code · Codex · Gemini — token usage ranking",
+    title: "Token Meter",
+    tagline: (people, rows) => `${people} ${people === 1 ? "person" : "people"} · ${rows} ${rows === 1 ? "row" : "rows"}`,
+    apiEquiv: "API-equivalent",
+    joinTitle: "Join",
+    joinWhy: "Only token counts go to a public gist in your own GitHub account, and this page reads it. Conversations, project names and file paths never leave your machine.",
+    whatsPublished: "What is published",
+    step1: "Collect and publish to your gist",
+    step1Note: "Needs the GitHub CLI signed in: <code>gh auth login</code> (once) · Node 20+",
+    step2: "Open the join link it prints",
+    step2Note: "Submit the issue it opens and you are added to the list automatically within a few minutes. After that, re-running step 1 updates your numbers.",
+    joinLost: (form) => `Lost the link? Run step 1 again, or open the ${form} and paste your gist URL.`,
+    joinForm: "join form",
+    copy: "Copy",
+    copied: "Copied. Paste it into a terminal and run it.",
+    copyFailed: "Copy was blocked. Select the command and copy it manually.",
+    periods: { all: "All time", today: "Today", week: "This week", month: "This month" },
+    measures: { total: "Total tokens", output: "Output tokens", cost: "API-equivalent" },
+    rankLine: (n, period, measure) => `${n} ${n === 1 ? "row" : "rows"} · ${period} · ${measure}`,
+    nobody: "Nobody yet",
+    dry: (period) => `No activity in ${period.toLowerCase()} yet. Running the collector again (node collect.mjs --publish) fills it in.`,
+    mixNote: "Tokenizers differ between tools, so the same text counts differently. Most of the total is cache reads.",
+    emptyTitle: "No one has joined yet",
+    emptyBody: "Two steps above — the top spot is yours.",
+    loading: "Loading the leaderboard…",
+    loadFail: "Could not load the member list. Try again in a moment.",
+    retry: "Try again",
+    refresh: "Refresh",
+    refreshing: "Loading…",
+    fetched: (t) => `loaded ${t}`,
+    cacheNote: "GitHub caches each gist for about 5 minutes, so a fresh upload can take that long to show.",
+    asOf: (t) => `as of ${t}`,
+    collectedAgo: (d) => `updated ${d}d ago`,
+    failedTitle: (n) => `Could not read ${n} ${n === 1 ? "member" : "members"}:`,
+    failedMore: (n) => `and ${n} more`,
+    reasons: {
+      not_found: "gist not found", http_error: "GitHub error", network: "could not connect", timeout: "timed out",
+      too_large: "over 256 KB", not_json: "not JSON", bad_schema: "unexpected format", login_mismatch: "login does not match",
+      bad_entries: "invalid numbers", bad_member: "bad member record", duplicate_member: "listed twice",
+      too_many_members: "list is full", unknown: "unknown error",
+    },
+    showMore: (n) => `Show ${n} more`,
+    legend: { output: "output", input: "input", cacheWrite: "cache write", cacheRead: "cache read",
+              note: "the thin strip is the real composition" },
+    topBurner: "TOP BURNER",
+    daysUnit: "d", sessionsUnit: "sessions", subagentsUnit: "subagents", mostly: "mostly",
+    detail: { readout: "Readout", input: "input", output: "output", cacheWrite: "cache write",
+              cacheRead: "cache read", cacheShare: "cache share", yield: "output yield",
+              responses: "responses", sessions: "sessions", perDay: "daily average",
+              peakDay: "biggest day", byModel: "By model", model: "model", total: "total",
+              msgs: "responses", cost: "API-equiv", daily: "Daily burn", peak: "peak",
+              recent: (n) => `last ${n} active days`,
+              mainVsSub: "Main vs subagents", main: "main", sub: "subagents", spawns: "spawns",
+              notReported: "not reported", profile: "GitHub profile", gist: "gist source",
+              tz: "time zone", collected: "collected",
+              estimated: "Some models are missing from the price table, so part of the API-equivalent is estimated." },
+    footPrivacy: "Only numbers reach this page.",
+    footPrivacyBody: "The collector picks token counts, model names and dates from your session logs and puts them in your own public gist. Conversations, names, projects and file paths stay on your machine. This site has no server and collects nothing — your browser reads the member list and the gists directly.",
+    privacyLink: "Privacy",
+    footPeriod: "Periods follow your calendar.",
+    footPeriodBody: "Today / this week (Monday start) / this month are cut by the viewer's calendar. Daily records are dated in each publisher's time zone, so day boundaries can differ by a few hours between people.",
+    footCost: "The API-equivalent figure is not a real bill.",
+    footCostBody: "Tokens spent on a subscription (Max/Pro/ChatGPT Plus) are not billed at these rates. It converts the same usage at each vendor's public API pricing, applying cache multipliers.",
+    footCache: "Most of the total is cache reads.",
+    footCacheBody: "Long sessions re-read the same context over and over. For something closer to work produced, sort by output tokens or API-equivalent.",
+    equivTitle: "What that adds up to",
+    equivMoney: "At list API prices",
+    equivEnergy: "Estimated energy",
+    equivMoneyNote: "Valued at published API rates — not what anyone actually paid (most of this ran on subscriptions). Prices and FX as of 2026-09, approximate.",
+    equivEnergyNote: "Rough estimate. Vendors do not publish per-token energy. Output, fresh input and cache-hit tokens are weighted differently (0.6 / 0.06 / 0.006 kWh per 1M) from Google's published Gemini measurements and Epoch AI's modelling; grid factor 445 gCO2/kWh (IEA 2024 world average). Assume it could be off by 5–10×.",
+    langName: "한국어",
+  },
+  ko: {
+    eyebrow: "Claude Code · Codex · Gemini — 토큰 사용량 랭킹",
+    title: "토큰 계량기",
+    tagline: (people, rows) => `참가자 ${people}명 · 기록 ${rows}건`,
+    apiEquiv: "API 환산",
+    joinTitle: "참가하기",
+    joinWhy: "토큰 숫자만 내 GitHub 계정의 공개 gist에 올리고, 이 페이지가 그걸 읽어 순위를 냅니다. 대화 내용·프로젝트 이름·파일 경로는 내 컴퓨터를 떠나지 않습니다.",
+    whatsPublished: "무엇이 공개되나",
+    step1: "수집해서 내 gist에 올리기",
+    step1Note: "GitHub CLI 로그인이 필요합니다: <code>gh auth login</code> (처음 한 번) · Node 20 이상",
+    step2: "출력된 참가 링크 열기",
+    step2Note: "링크가 여는 이슈를 그대로 제출하면 몇 분 안에 자동으로 명단에 오릅니다. 그다음부터는 1번만 다시 실행하면 순위가 갱신됩니다.",
+    joinLost: (form) => `링크를 잃어버렸다면 1번을 다시 실행하거나, ${form}을 열어 gist 주소를 붙여 넣으세요.`,
+    joinForm: "참가 신청서",
+    copy: "복사",
+    copied: "복사했습니다. 터미널에 붙여넣고 실행하세요.",
+    copyFailed: "복사가 막혔습니다. 명령을 직접 선택해 복사해 주세요.",
+    periods: { all: "누적", today: "오늘", week: "이번 주", month: "이번 달" },
+    measures: { total: "총 토큰", output: "출력 토큰", cost: "API 환산" },
+    rankLine: (n, period, measure) => `${n}줄 · ${period} ${measure} 기준`,
+    nobody: "아직 아무도 없음",
+    dry: (period) => `${period} 기록이 아직 없습니다. 수집기를 다시 돌리면(node collect.mjs --publish) 채워집니다.`,
+    mixNote: "도구마다 토크나이저가 서로 달라 같은 글이라도 토큰 수가 다릅니다. 총 토큰의 대부분은 캐시 읽기입니다.",
+    emptyTitle: "아직 참가자가 없습니다",
+    emptyBody: "위의 두 단계면 첫 번째 자리가 당신 겁니다.",
+    loading: "순위를 불러오는 중…",
+    loadFail: "참가자 명단을 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.",
+    retry: "다시 시도",
+    refresh: "새로고침",
+    refreshing: "불러오는 중…",
+    fetched: (t) => `불러온 시각 ${t}`,
+    cacheNote: "GitHub가 gist를 5분쯤 캐시하므로, 방금 올린 기록은 그만큼 늦게 보일 수 있습니다.",
+    asOf: (t) => `${t} 기준`,
+    collectedAgo: (d) => `${d}일 전 갱신`,
+    failedTitle: (n) => `기록을 읽지 못한 참가자 ${n}명:`,
+    failedMore: (n) => `외 ${n}명`,
+    reasons: {
+      not_found: "gist 없음", http_error: "GitHub 응답 오류", network: "연결 실패", timeout: "시간 초과",
+      too_large: "256KB 초과", not_json: "JSON 아님", bad_schema: "형식이 다름", login_mismatch: "계정 불일치",
+      bad_entries: "숫자 이상", bad_member: "명단 기록 오류", duplicate_member: "명단에 두 번",
+      too_many_members: "명단 정원 초과", unknown: "알 수 없는 오류",
+    },
+    showMore: (n) => `${n}줄 더 보기`,
+    legend: { output: "출력", input: "입력", cacheWrite: "캐시 쓰기", cacheRead: "캐시 읽기",
+              note: "막대 아래 띠 = 실제 구성 비율" },
+    topBurner: "최다 소모",
+    daysUnit: "일", sessionsUnit: "세션", subagentsUnit: "서브에이전트", mostly: "중심",
+    detail: { readout: "계측 내역", input: "입력", output: "출력", cacheWrite: "캐시 쓰기",
+              cacheRead: "캐시 읽기", cacheShare: "캐시 비중", yield: "출력 전환율",
+              responses: "응답 수", sessions: "세션", perDay: "하루 평균",
+              peakDay: "최다 사용일", byModel: "모델별", model: "모델", total: "총 토큰",
+              msgs: "응답", cost: "API 환산", daily: "일별 소모", peak: "최대",
+              recent: (n) => `최근 활동일 ${n}일`,
+              mainVsSub: "메인 대화 vs 서브에이전트", main: "메인", sub: "서브에이전트",
+              spawns: "소환 횟수", notReported: "미보고", profile: "GitHub 프로필", gist: "gist 원본",
+              tz: "시간대", collected: "수집",
+              estimated: "단가표에 없는 모델이 있어 API 환산 일부는 추정치입니다." },
+    footPrivacy: "이 페이지에 올라오는 건 숫자뿐입니다.",
+    footPrivacyBody: "수집기는 세션 로그에서 토큰 수치·모델명·날짜만 골라 각자의 공개 gist에 올립니다. 대화 내용·이름·프로젝트·파일 경로는 내 컴퓨터에 남습니다. 이 사이트는 서버가 없고 아무것도 수집하지 않습니다 — 명단과 gist를 브라우저가 직접 읽습니다.",
+    privacyLink: "개인정보 안내",
+    footPeriod: "기간은 보는 사람의 달력 기준입니다.",
+    footPeriodBody: "오늘·이번 주(월요일 시작)·이번 달은 보는 사람의 달력으로 자릅니다. 날짜별 기록은 올린 사람의 시간대 날짜라, 시간대가 다른 사람끼리는 하루 경계가 몇 시간 어긋날 수 있습니다.",
+    footCost: "API 환산 금액은 실제 청구액이 아닙니다.",
+    footCostBody: "구독(Max/Pro/ChatGPT Plus)으로 쓴 토큰은 이 금액이 청구되지 않습니다. 같은 사용량을 각 벤더의 공개 API 단가로 환산한 참고값이며 캐시 배수를 적용했습니다.",
+    footCache: "총 토큰의 대부분은 캐시 읽기입니다.",
+    footCacheBody: "긴 세션일수록 같은 맥락을 반복해서 다시 읽기 때문입니다. 실제로 한 일에 가까운 지표를 보려면 출력 토큰이나 API 환산으로 정렬해 보세요.",
+    equivTitle: "이만큼이면",
+    equivMoney: "API 정가로 치면",
+    equivEnergy: "전기로 치면 (추정)",
+    equivMoneyNote: "API 공식 단가로 환산한 값이며 실제 결제액이 아닙니다 — 대부분 구독으로 돌린 것입니다. 2026년 9월 가격·환율 기준, 대략값.",
+    equivEnergyNote: "추정치입니다. AI 회사들은 토큰당 전력을 공개하지 않습니다. 출력·신규입력·캐시 토큰에 각각 다른 계수(1M당 0.6 / 0.06 / 0.006 kWh)를 적용했고, 근거는 Google이 공개한 Gemini 실측과 Epoch AI 모델링입니다. 배출계수는 445 gCO2/kWh(IEA 2024 세계 평균). 오차가 5~10배일 수 있습니다.",
+    langName: "English",
+  },
+};
+
+// ── 환산 (2026-09 기준 가격, 출처는 README) ───────────────────────────
+const FX_USD_KRW = 1385;
+
+// span:true = 24개월 넘으면 "년"으로 접어서 보여준다
+const MONEY_ITEMS = {
+  en: [
+    { label: "Netflix",         usd: 19.99, span: true, unit: " mo" },
+    { label: "Big Mac",         usd: 6.10 },
+    { label: "NY–London return", usd: 683 },
+    { label: 'MacBook Pro 16"', usd: 2699 },
+    { label: "US median rent",  usd: 1895, span: true, unit: " mo" },
+  ],
+  ko: [
+    { label: "치킨",          krw: 30000,   unit: "마리" },
+    { label: "지하철",        krw: 1550,    unit: "번" },
+    { label: "서울 원룸 월세", krw: 625000,  unit: "개월", span: true },
+    { label: "아이폰 17 Pro", krw: 1782000, unit: "대" },
+    { label: "아메리카노",    krw: 4700,    unit: "잔" },
+  ],
+};
+
+function moneyEquivs(costUsd, lang) {
+  return (MONEY_ITEMS[lang] || MONEY_ITEMS.en).map((it) => {
+    const unitUsd = it.usd != null ? it.usd : it.krw / FX_USD_KRW;
+    const n = costUsd / unitUsd;
+    if (it.span && n >= 24) {
+      const y = n / 12;
+      return { label: it.label, val: (y >= 10 ? Math.round(y) : y.toFixed(1)) + (lang === "ko" ? "년" : " yr") };
+    }
+    const cnt = n >= 10 ? Math.round(n) : Math.round(n * 10) / 10;
+    return { label: it.label, val: full(cnt) + (it.unit ? it.unit : "") };
+  });
+}
+
+// ── 에너지 환산 ───────────────────────────────────────────────────────
+// 토큰 종류별로 계수가 다르다. 총 토큰 × 단일 계수는 캐시 95% 워크로드에서
+// 36배 과대추정된다. 출처: Epoch AI(GPT-4o 0.3Wh/쿼리 ÷ 출력 500토큰),
+// Google arXiv:2508.15734(Gemini 실측 0.24Wh/프롬프트, PUE 포함),
+// 캐시 계수는 Anthropic 캐시 가격 배수(0.1×)를 차용 — 직접 측정치 없음.
+const ENERGY = {
+  whPerOutput: 0.6e-3,     // 출력 1M = 0.6 kWh
+  whPerInput:  0.06e-3,    // 신규 prefill = 출력의 1/10 (compute-bound)
+  whPerCached: 0.006e-3,   // 캐시 히트 = 신규입력의 1/10
+  gCo2PerKwh:  445,        // IEA 2024 전세계 평균 (위치기반)
+};
+// 비교 기준 — EPA / DOE / ENERGY STAR 1차 출처
+const REF = {
+  fridgeKwhYear: 493, evKwhKm: 0.19, phoneChargeKwh: 0.019,
+  treeKgCo2Year: 60, carGCo2Km: 244,
+};
+
+function energyEquivs(t, lang) {
+  const wh = (t.output || 0) * ENERGY.whPerOutput
+    + ((t.input || 0) + (t.cacheWrite || 0)) * ENERGY.whPerInput
+    + (t.cacheRead || 0) * ENERGY.whPerCached;
+  const kwh = wh / 1000;
+  const kgCo2 = (kwh * ENERGY.gCo2PerKwh) / 1000;
+  const n = (x, d = 0) => full(x >= 100 ? Math.round(x) : Math.round(x * 10 ** d) / 10 ** d);
+  const months = kwh / (REF.fridgeKwhYear / 12);
+  const ko = lang === "ko";
+  return {
+    kwh, kgCo2,
+    items: [
+      { label: ko ? "전기" : "Electricity", val: n(kwh, 1) + " kWh" },
+      { label: ko ? "냉장고" : "Fridge",
+        val: months >= 24 ? n(months / 12, 1) + (ko ? "년" : " yr") : n(months, 1) + (ko ? "개월" : " mo") },
+      { label: ko ? "전기차 주행" : "EV range", val: n(kwh / REF.evKwhKm) + " km" },
+      { label: ko ? "휴대폰 충전" : "Phone charges", val: n(kwh / REF.phoneChargeKwh) + (ko ? "회" : "") },
+      { label: "CO2", val: n(kgCo2, 1) + " kg" },
+      { label: ko ? "나무 1년 흡수" : "Trees (1 yr)", val: n(kgCo2 / REF.treeKgCo2Year, 1) + (ko ? "그루" : "") },
+    ],
+  };
+}
+
+// ── 뷰어별 설정 (브라우저 저장소가 막혀 있어도 페이지는 돈다) ──────────
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+const pickLang = () => {
+  const saved = store.get("tm:lang");
+  if (saved === "en" || saved === "ko") return saved;
+  return (navigator.language || "en").toLowerCase().startsWith("ko") ? "ko" : "en";
+};
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ── 상태 ──────────────────────────────────────────────────────────────
+const state = {
+  board: null,        // loadBoard 결과 { fetchedAt, members, rows, failed }
+  loading: true,
+  error: null,
+  period: "all",
+  unit: "total",
+  open: null,         // "login|tool"
+  limit: PAGE,
+  msg: null,          // {kind, text}
+  lang: pickLang(),
+  os: /win/i.test(navigator.platform || navigator.userAgent) ? "win" : "mac",
+};
+
+const T = () => DICT[state.lang];
+
+const command = () => state.os === "win"
+  ? `iwr -useb ${COLLECTOR} -OutFile collect.mjs; node collect.mjs --publish`
+  : `curl -fsSL ${COLLECTOR} -o collect.mjs && node collect.mjs --publish`;
+
+// ── 숫자·시각 표기 ─────────────────────────────────────────────
+const tok = (n) => {
+  if (state.lang === "ko") {
+    const 억 = 1e8, 만 = 1e4;
+    return n >= 억 ? (n / 억).toFixed(n >= 10 * 억 ? 1 : 2) + "억"
+         : n >= 만 ? (n / 만).toFixed(n >= 100 * 만 ? 0 : 1) + "만" : full(n);
+  }
+  return n >= 1e9 ? (n / 1e9).toFixed(n >= 1e10 ? 1 : 2) + "B"
+       : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e8 ? 0 : 1) + "M"
+       : n >= 1e3 ? (n / 1e3).toFixed(0) + "K" : full(n);
+};
+const full = (n) => Math.round(n).toLocaleString(state.lang === "ko" ? "ko-KR" : "en-US");
+const usd = (n) => "$" + Math.round(n).toLocaleString("en-US");
+const pct = (n) => (n * 100).toFixed(n < 0.1 ? 2 : 1) + "%";
+const pad = (n) => String(n).padStart(2, "0");
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** 보는 사람 시간대의 짧은 시각 — 올해가 아니면 연도도 붙인다 */
+// 시각이 없는 gist 도 형식상 통과한다 — new Date(null) 은 1970년이 되므로 먼저 거른다
+const dateOf = (iso) => { const d = typeof iso === "string" ? new Date(iso) : null; return d && Number.isFinite(d.getTime()) ? d : null; };
+function stamp(iso, now) {
+  const d = dateOf(iso);
+  if (!d) return "—";
+  const hm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const y = d.getFullYear() !== now.getFullYear() ? d.getFullYear() : null;
+  return state.lang === "ko"
+    ? `${y ? y + "/" : ""}${d.getMonth() + 1}/${d.getDate()} ${hm}`
+    : `${MON[d.getMonth()]} ${d.getDate()}${y ? ", " + y : ""} ${hm}`;
+}
+const clock = (iso) => { const d = dateOf(iso); return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "—"; };
+
+const PERIOD_KEYS = ["all", "today", "week", "month"];
+const UNITS = {
+  total:  { fmt: tok },
+  output: { fmt: tok },
+  cost:   { fmt: usd },
+};
+const TOOLS = { claude: "Claude Code", codex: "Codex", gemini: "Gemini" };
+
+/** 활동일 기준 하루 평균 — 상세 패널에서 쓴다 */
+const perDay = (e) => (e.range && e.range.activeDays ? e.totals.total / e.range.activeDays : 0);
+
+// ── 렌더 ──────────────────────────────────────────────────────
+function view() {
+  const D = T();
+  const now = new Date();
+  const b = state.board;
+  const all = b ? b.rows : [];
+  const { rows, people } = rank(all, state.period, state.unit, { now });
+  const range = periodRange(state.period, { now });
+  const mixed = new Set(all.map((r) => r.tool)).size > 1;
+  const grand = all.reduce((s, r) => s + r.entry.totals.total, 0);
+  const cost = all.reduce((s, r) => s + r.entry.totals.cost, 0);
+  const boardTotals = all.reduce((a, r) => {
+    for (const k of ["input", "output", "cacheWrite", "cacheRead"]) a[k] += r.entry.totals[k] || 0;
+    return a;
+  }, { input: 0, output: 0, cacheWrite: 0, cacheRead: 0 });
+  const top = rows.reduce((m, r) => Math.max(m, r.value), 0);
+  const dry = rows.length > 0 && top === 0;
+  const shown = rows.slice(0, state.limit);
+
+  return `
+<header class="mast">
+  <div class="mast-top">
+    <div class="brand">
+      <span class="eyebrow">${D.eyebrow}</span>
+      <h1>${D.title}</h1>
+    </div>
+    <div class="meter">
+      <div class="meter-label">${D.tagline(people.length, all.length)}</div>
+      <div class="meter-read">${tok(grand)}</div>
+      <div class="meter-sub">${full(grand)} tok · ${D.apiEquiv} ${usd(cost)}</div>
+      <button class="langbtn" id="lang" lang="${state.lang === "ko" ? "en" : "ko"}">${D.langName}</button>
+    </div>
+  </div>
+</header>
+
+${joinStrip()}
+
+<div class="bar">
+  <div class="segs" role="group" aria-label="period">
+    ${PERIOD_KEYS.map((k) =>
+      `<button data-period="${k}" aria-pressed="${state.period === k}">${D.periods[k]}</button>`).join("")}
+  </div>
+  <div class="units" role="group" aria-label="unit">
+    ${Object.keys(UNITS).map((k) =>
+      `<button data-unit="${k}" aria-pressed="${state.unit === k}">${D.measures[k]}</button>`).join("")}
+  </div>
+</div>
+<div class="subbar">
+  <span class="count">${rows.length ? D.rankLine(rows.length, D.periods[state.period], D.measures[state.unit]) : D.nobody}</span>
+  <span class="subbar-r">
+    ${range ? `<span class="count">${range.from === range.to ? range.from : range.from + " ~ " + range.to}</span>` : ""}
+    ${b ? `<span class="count" title="${esc(D.cacheNote)}">${D.fetched(clock(b.fetchedAt))} · <button class="linky" id="refresh" ${state.loading ? "disabled" : ""}>${state.loading ? D.refreshing : D.refresh}</button></span>` : ""}
+  </span>
+</div>
+${state.error && b ? `<p class="note err" role="status">${D.loadFail}</p>` : ""}
+${dry ? `<p class="mixnote">${esc(D.dry(D.periods[state.period]))}</p>` : ""}
+${mixed ? `<p class="mixnote">${D.mixNote}</p>` : ""}
+
+<div class="rows">
+  ${shown.length ? shown.map((r) => row(r, top, now)).join("") : emptyState()}
+</div>
+${rows.length > shown.length ? `<button class="ghost more" id="more">${D.showMore(Math.min(PAGE, rows.length - shown.length))}</button>` : ""}
+
+${rows.length ? `<div class="legend">
+  <span><i class="s-out"></i>${D.legend.output}</span>
+  <span><i class="s-in"></i>${D.legend.input}</span>
+  <span><i class="s-cw"></i>${D.legend.cacheWrite}</span>
+  <span><i class="s-cr"></i>${D.legend.cacheRead}</span>
+  <span style="color:var(--ink-3)">${D.legend.note}</span>
+</div>` : ""}
+
+${b && b.failed.length ? failedList(b) : ""}
+
+${rows.length ? `<section class="equiv-sec">
+  <h2 class="equiv-h">${D.equivTitle}</h2>
+  ${equivBlock(boardTotals, cost, state.lang)}
+</section>` : ""}
+
+<footer>
+  <p><b>${D.footPrivacy}</b> ${D.footPrivacyBody} <a href="privacy.html">${D.privacyLink}</a></p>
+  <p><b>${D.footPeriod}</b> ${D.footPeriodBody}</p>
+  <p><b>${D.footCost}</b> ${D.footCostBody}</p>
+  <p><b>${D.footCache}</b> ${D.footCacheBody}</p>
+</footer>`;
+}
+
+function joinStrip() {
+  const D = T();
+  return `
+<section class="intake" id="join" aria-labelledby="join-h">
+  <div class="intake-in">
+    <div class="join-head">
+      <h2 class="join-h" id="join-h">${D.joinTitle}</h2>
+      <p class="join-why">${D.joinWhy} <a href="privacy.html">${D.whatsPublished}</a></p>
+    </div>
+    <ol class="join-steps">
+      <li class="step">
+        <span class="step-n">1</span>
+        <div class="step-body">
+          <div class="step-t">${D.step1}
+            <span class="oschoice" role="group" aria-label="OS"><button type="button" data-os="mac" aria-pressed="${state.os !== "win"}">macOS/Linux</button><button type="button" data-os="win" aria-pressed="${state.os === "win"}">Windows</button></span>
+          </div>
+          <div class="cmdrow">
+            <pre class="cmd" id="cmd" tabindex="0">${esc(command())}</pre>
+            <button class="ghost copy" id="copy">${D.copy}</button>
+          </div>
+          <p class="step-note">${D.step1Note}</p>
+        </div>
+      </li>
+      <li class="step">
+        <span class="step-n">2</span>
+        <div class="step-body">
+          <div class="step-t">${D.step2}</div>
+          <p class="step-note">${D.step2Note}</p>
+          <p class="step-note">${D.joinLost(`<a href="${JOIN_FORM}" target="_blank" rel="noopener">${D.joinForm}</a>`)}</p>
+        </div>
+      </li>
+    </ol>
+    ${state.msg ? `<p class="note ${state.msg.kind}" role="status">${esc(state.msg.text)}</p>` : ""}
+  </div>
+</section>`;
+}
+
+/** 읽지 못한 참가자 — 짧게. 많으면 앞의 12명만 */
+function failedList(b) {
+  const D = T();
+  const gist = new Map(b.members.map((m) => [m.login.toLowerCase(), m.gist]));
+  // 명단 줄 자체가 문제인 경우(두 번 적힘 등)는 같은 아이디의 다른 줄 gist 로 잘못 이어지므로 링크를 달지 않는다
+  const LIST_PROBLEMS = ["bad_member", "duplicate_member", "too_many_members"];
+  const items = b.failed.slice(0, 12).map((f) => {
+    const g = LIST_PROBLEMS.includes(f.reason) ? null : gist.get(String(f.login).toLowerCase());
+    const name = g ? `<a href="https://gist.github.com/${esc(f.login)}/${esc(g)}" target="_blank" rel="noopener">${esc(f.login)}</a>` : esc(f.login);
+    return `${name} <span class="why">(${esc(D.reasons[f.reason] || D.reasons.unknown)})</span>`;
+  });
+  const rest = b.failed.length - items.length;
+  return `<p class="failnote"><b>${D.failedTitle(b.failed.length)}</b> ${items.join(" · ")}${rest > 0 ? ` · ${D.failedMore(rest)}` : ""}</p>`;
+}
+
+/** 돈·전기 환산 블록. 보드 전체와 개인 상세 양쪽에서 쓴다. */
+function equivBlock(totals, costUsd, lang) {
+  const D = DICT[lang];
+  const money = moneyEquivs(costUsd, lang);
+  const en = energyEquivs(totals, lang);
+  const krw = lang === "ko" ? ` · 약 ${full(Math.round(costUsd * FX_USD_KRW / 10000))}만원` : "";
+  const cell = (x) => `<div class="fact"><div class="fact-k">${esc(x.label)}</div><div class="fact-v">${esc(x.val)}</div></div>`;
+  return `
+  <div class="equiv">
+    <div class="dsec">
+      <div class="dtitle">${D.equivMoney} — ${usd(costUsd)}${krw}</div>
+      <div class="facts">${money.map(cell).join("")}</div>
+      <p class="equiv-note">${D.equivMoneyNote}</p>
+    </div>
+    <div class="dsec">
+      <div class="dtitle">${D.equivEnergy}</div>
+      <div class="facts">${en.items.map(cell).join("")}</div>
+      <p class="equiv-note">${D.equivEnergyNote}</p>
+    </div>
+  </div>`;
+}
+
+function emptyState() {
+  const D = T();
+  if (state.error) return `<div class="empty"><h2>${D.loadFail}</h2><button class="ghost" id="retry">${D.retry}</button></div>`;
+  if (!state.board) return `<div class="empty"><h2>${D.loading}</h2></div>`;
+  return `<div class="empty"><h2>${D.emptyTitle}</h2><p>${D.emptyBody}</p></div>`;
+}
+
+function row(r, top, now) {
+  const D = T();
+  const e = r.entry;
+  const t = e.totals;
+  const val = r.value;
+  const w = top > 0 && val > 0 ? Math.max(1.5, (val / top) * 100) : 0;
+  const seg = (v) => (t.total > 0 ? (v / t.total) * 100 : 0);
+  const models = Object.entries(e.byModel || {}).sort((a, b) => b[1].total - a[1].total);
+  const lead = r.rank === 1 && val > 0;
+  const key = `${r.login}|${r.tool}`;
+  const open = state.open === key;
+  const ago = staleDays(r.updatedAt, { now });
+  const fmt = UNITS[state.unit].fmt;
+  const sub = state.unit === "cost" ? full(measure(e, state.period, "total", { now })) + " tok" : full(val) + " tok";
+
+  return `<div class="row${lead ? " lead" : ""}">
+    <button class="row-head" data-open="${esc(key)}" aria-expanded="${open}" aria-label="${esc(r.login)} ${TOOLS[r.tool]}">
+      <div class="rank">${r.rank}</div>
+      <div class="who">
+        <div class="name"><span class="login"><img class="ava" src="https://github.com/${esc(r.login)}.png?size=36" alt="" width="18" height="18" loading="lazy" decoding="async">${esc(r.login)}</span><span class="src src-${r.tool}">${TOOLS[r.tool]}</span>${ago ? `<span class="src stale${ago >= 3 ? " old" : ""}">${D.collectedAgo(ago)}</span>` : ""}${lead ? `<span class="tag">${D.topBurner}</span>` : ""}</div>
+        <div class="meta">${models[0] ? esc(models[0][0].replace("claude-", "")) : "—"} ${D.mostly} · <b>${e.range.activeDays || 0}</b>${D.daysUnit} · ${D.sessionsUnit} <b>${full(e.sessions || 0)}</b>${e.subagents ? ` · ${D.subagentsUnit} <b>${full(e.subagents)}</b>` : ""} · ${D.asOf(stamp(r.updatedAt, now))}</div>
+        <div class="track"><i style="width:${w}%"></i></div>
+        <div class="strip" aria-hidden="true">
+          ${t.output ? `<i class="s-out" style="flex:0 0 ${seg(t.output)}%"></i>` : ""}
+          ${t.input ? `<i class="s-in" style="flex:0 0 ${seg(t.input)}%"></i>` : ""}
+          ${t.cacheWrite ? `<i class="s-cw" style="flex:0 0 ${seg(t.cacheWrite)}%"></i>` : ""}
+          ${t.cacheRead ? `<i class="s-cr" style="flex:1 1 ${seg(t.cacheRead)}%"></i>` : ""}
+        </div>
+      </div>
+      <div class="read">
+        <div class="read-big">${fmt(val)}</div>
+        <div class="read-sub">${sub}</div>
+      </div>
+    </button>
+    ${open ? detail(r, now) : ""}
+  </div>`;
+}
+
+function detail(r, now) {
+  const D = T().detail;
+  const e = r.entry;
+  const t = e.totals;
+  const reuse = t.cacheRead + t.cacheWrite + t.input;
+  const hit = reuse > 0 ? t.cacheRead / reuse : 0;
+  const yieldRate = t.total > 0 ? t.output / t.total : 0;
+  const models = Object.entries(e.byModel || {}).sort((a, b) => b[1].total - a[1].total);
+  const allDays = Object.entries(e.byDay || {}).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  const days = allDays.slice(-90);   // 막대가 너무 가늘어지지 않게 최근 활동일 90일만
+  const peakAll = allDays.reduce((mx, d) => Math.max(mx, d[1][0]), 0);
+  const peak = days.reduce((mx, d) => Math.max(mx, d[1][0]), 0);
+
+  return `<div class="detail">
+    <div class="dlinks">
+      <a href="https://github.com/${esc(r.login)}" target="_blank" rel="noopener">${D.profile}</a>
+      ${r.gist ? `<a href="https://gist.github.com/${esc(r.login)}/${esc(r.gist)}" target="_blank" rel="noopener">${D.gist}</a>` : ""}
+      <span>${D.collected} ${esc(stamp(e.generatedAt || r.updatedAt, now))}</span>
+      ${e.tz ? `<span>${D.tz} ${esc(e.tz)}</span>` : ""}
+    </div>
+    ${e.estimated ? `<p class="dnote">${D.estimated}</p>` : ""}
+
+    <div class="dsec">
+      <div class="dtitle">${D.readout}</div>
+      <div class="facts">
+        <div class="fact"><div class="fact-k">${D.input}</div><div class="fact-v">${tok(t.input)}</div></div>
+        <div class="fact"><div class="fact-k">${D.output}</div><div class="fact-v">${tok(t.output)}</div></div>
+        <div class="fact"><div class="fact-k">${D.cacheWrite}</div><div class="fact-v">${r.tool === "codex" ? `<span title="Codex does not report cache writes separately">${D.notReported}</span>` : tok(t.cacheWrite)}</div></div>
+        <div class="fact"><div class="fact-k">${D.cacheRead}</div><div class="fact-v">${tok(t.cacheRead)}</div></div>
+        <div class="fact"><div class="fact-k">${D.cacheShare}</div><div class="fact-v">${pct(hit)}</div></div>
+        <div class="fact"><div class="fact-k">${D.yield}</div><div class="fact-v">${pct(yieldRate)}</div></div>
+        <div class="fact"><div class="fact-k">${D.perDay}</div><div class="fact-v">${tok(perDay(e))}</div></div>
+        <div class="fact"><div class="fact-k">${D.peakDay}</div><div class="fact-v">${tok(peakAll)}</div></div>
+        <div class="fact"><div class="fact-k">${D.responses}</div><div class="fact-v">${full(e.messages || 0)}</div></div>
+        <div class="fact"><div class="fact-k">${D.sessions}</div><div class="fact-v">${full(e.sessions || 0)}</div></div>
+      </div>
+    </div>
+
+    <div class="dsec">
+      <div class="dtitle">${T().equivTitle}</div>
+      ${equivBlock(t, t.cost, state.lang)}
+    </div>
+
+    ${models.length ? `<div class="dsec">
+      <div class="dtitle">${D.byModel}</div>
+      <div class="scroll"><table class="mtable">
+        <thead><tr><th>${D.model}</th><th class="r">${D.total}</th><th class="r">${D.output}</th><th class="r">${D.msgs}</th><th class="r">${D.cost}</th></tr></thead>
+        <tbody>${models.map(([n, v]) => `<tr>
+          <td class="m">${esc(n.replace("claude-", ""))}</td>
+          <td class="r m">${tok(v.total)}</td>
+          <td class="r m">${tok(v.output)}</td>
+          <td class="r m">${full(v.messages || 0)}</td>
+          <td class="r m">${usd(v.cost || 0)}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>` : ""}
+
+    ${days.length ? `<div class="dsec">
+      <div class="dtitle">${D.daily} · ${days.length < allDays.length ? D.recent(days.length) : days.length + T().daysUnit}</div>
+      <div class="spark" role="img" aria-label="daily tokens">
+        ${days.map(([d, v]) => `<i class="${v[0] === peak && peak > 0 ? "peak" : ""}" style="height:${Math.max(3, peak > 0 ? (v[0] / peak) * 100 : 0)}%" title="${d} · ${tok(v[0])}"></i>`).join("")}
+      </div>
+      <div class="spark-x"><span>${days[0][0]}</span><span>${D.peak} ${tok(peak)}</span><span>${days[days.length - 1][0]}</span></div>
+    </div>` : ""}
+
+    ${e.split ? `<div class="dsec">
+      <div class="dtitle">${D.mainVsSub}</div>
+      <div class="facts">
+        <div class="fact"><div class="fact-k">${D.main}</div><div class="fact-v">${tok(e.split.main || 0)}</div></div>
+        <div class="fact"><div class="fact-k">${D.sub}</div><div class="fact-v">${tok(e.split.sub || 0)}</div></div>
+        <div class="fact"><div class="fact-k">${D.spawns}</div><div class="fact-v">${full(e.subagents || 0)}</div></div>
+      </div>
+    </div>` : ""}
+  </div>`;
+}
+
+// ── 불러오기 ──────────────────────────────────────────────────
+async function load() {
+  state.loading = true;
+  state.error = null;
+  paint();
+  try {
+    // 이 페이지가 있는 폴더 = members.json 이 있는 폴더 (Pages 든 로컬이든)
+    state.board = await loadBoard({ base: new URL("./", location.href).href });
+  } catch (e) {
+    state.error = e;
+    // 이미 그려 둔 순위가 있으면 지우지 않는다 — 새로고침 실패만 알린다(subbar 아래)
+  }
+  state.loading = false;
+  paint();
+}
+
+// ── 그리기 · 이벤트 ───────────────────────────────────────────
+// 다시 그리면 버튼이 새로 만들어진다 — 키보드로 누르던 버튼에 포커스를 돌려준다
+const FOCUS_ATTRS = ["data-period", "data-unit", "data-open", "data-os"];
+function focusKey(node) {
+  if (!node || node === document.body || !el("root").contains(node)) return null;
+  if (node.id) return "#" + CSS.escape(node.id);
+  for (const a of FOCUS_ATTRS) if (node.hasAttribute(a)) return `[${a}="${CSS.escape(node.getAttribute(a))}"]`;
+  return null;
+}
+
+function paint() {
+  const k = focusKey(document.activeElement);
+  el("root").innerHTML = view();
+  if (k) { const n = el("root").querySelector(k); if (n) n.focus({ preventScroll: true }); }
+}
+
+document.addEventListener("click", (ev) => {
+  const D = T();
+  if (ev.target.closest("#lang")) {
+    state.lang = state.lang === "ko" ? "en" : "ko";
+    store.set("tm:lang", state.lang);
+    document.documentElement.lang = state.lang;
+    document.title = T().title;
+    paint(); return;
+  }
+
+  const osb = ev.target.closest("[data-os]");
+  if (osb) { state.os = osb.dataset.os === "win" ? "win" : "mac"; state.msg = null; paint(); return; }
+
+  const pd = ev.target.closest("[data-period]");
+  if (pd) { state.period = pd.dataset.period; state.limit = PAGE; paint(); return; }
+
+  const un = ev.target.closest("[data-unit]");
+  if (un) { state.unit = un.dataset.unit; state.limit = PAGE; paint(); return; }
+
+  const o = ev.target.closest("[data-open]");
+  if (o) { state.open = state.open === o.dataset.open ? null : o.dataset.open; paint(); return; }
+
+  if (ev.target.closest("#more")) { state.limit += PAGE; paint(); return; }
+  if (ev.target.closest("#refresh") || ev.target.closest("#retry")) { state.msg = null; load(); return; }
+
+  if (ev.target.closest("#copy")) {
+    const done = (msg) => { state.msg = msg; paint(); };
+    if (!navigator.clipboard) return done({ kind: "err", text: D.copyFailed });
+    navigator.clipboard.writeText(command()).then(
+      () => done({ kind: "ok", text: D.copied }),
+      () => done({ kind: "err", text: D.copyFailed }),
+    );
+  }
+});
+
+document.documentElement.lang = state.lang;
+document.title = T().title;
+load();
+</script>
+</body>
+</html>

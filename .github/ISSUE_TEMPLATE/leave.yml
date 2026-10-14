@@ -1,0 +1,24 @@
+# 순위판 탈퇴. scripts/join.mjs 가 제목(leave)만 보고 이슈를 연 사람을 명단에서 뺀다.
+# 이슈 폼은 입력 칸이 하나는 있어야 해서 확인 체크 칸을 둔다.
+name: 순위판에서 나가기 · Leave the leaderboard
+description: 명단에서 나를 빼요 · Remove yourself from the members list
+title: leave
+labels: [leave]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        이 이슈를 여는 계정이 명단에서 빠져요(다른 사람은 뺄 수 없어요). 제목은 `leave` 그대로 두세요.
+
+        봇은 명단만 고쳐요. **내 gist는 직접 지워 주세요** — https://gist.github.com/ 에서 `token-meter.json` gist를 열고 **Delete**. 지우기 전까지는 gist와 지난 버전(revision)이 모두 공개로 남아요. 맥 앱을 쓰고 있다면 ‘올리기’ 체크를 풀거나 앱을 꺼 주세요(켜 두면 고른 간격마다 gist에 다시 올려요).
+
+        The account opening this issue is removed from the members list (you cannot remove anyone else). Keep the title as `leave`.
+
+        The bot only edits the list. **Delete your gist yourself** — open the `token-meter.json` gist at https://gist.github.com/ and press **Delete**. Until you do, the gist and all its past revisions stay public. If you use the Mac app, untick “올리기” (upload) or quit it (otherwise it republishes to the gist at the interval you chose).
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 확인 · Confirm
+      options:
+        - label: 순위판 명단에서 저를 빼 주세요 · Please remove me from the members list
+          required: true

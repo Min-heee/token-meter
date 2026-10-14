@@ -1,0 +1,8 @@
+# 빌드 결과·개인 자료는 올리지 않는다
+macapp/TokenMeter.app/
+macapp/build/
+*.zip
+submission.json
+node_modules/
+.DS_Store
+*.tmp

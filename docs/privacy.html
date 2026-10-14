@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개인정보 안내 · 토큰 계량기</title>
+<meta name="description" content="토큰 계량기에서 공개되는 것과 공개되지 않는 것, 그만두는 법 — What Token Meter publishes and how to leave">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body,h1,h2,h3,p,ul,ol{margin:0;padding:0}
+
+:root{
+  --ground:#EDF1EF; --panel:#FFFFFF; --sunk:#E2E8E5;
+  --ink:#101715; --ink-2:#4B5955; --ink-3:#7B8A85;
+  --rule:#D2D9D6; --rule-2:#BFC8C4;
+  --a1:#0B6E5F; --heat:#B0451A; --heat-bg:#F6E7DF;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1211; --panel:#141C1A; --sunk:#1B2523;
+    --ink:#E7EEEB; --ink-2:#93A29D; --ink-3:#6D7C77;
+    --rule:#232E2B; --rule-2:#31403C;
+    --a1:#3FC7A9; --heat:#F08A4B; --heat-bg:#2A1A11;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1211; --panel:#141C1A; --sunk:#1B2523;
+  --ink:#E7EEEB; --ink-2:#93A29D; --ink-3:#6D7C77;
+  --rule:#232E2B; --rule-2:#31403C;
+  --a1:#3FC7A9; --heat:#F08A4B; --heat-bg:#2A1A11;
+}
+
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--a1)}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 96px}
+.mast{padding:40px 0 20px;border-bottom:2px solid var(--ink);display:grid;gap:8px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3)}
+.eyebrow a{color:inherit}
+h1{font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-weight:800;font-size:clamp(30px,5.4vw,44px);line-height:1;letter-spacing:-.02em}
+.jump{font-size:13px;color:var(--ink-2)}
+section{padding:30px 0 6px}
+section + section{border-top:1px solid var(--rule);margin-top:30px}
+h2{font-family:Archivo,"IBM Plex Sans KR",sans-serif;font-weight:800;font-size:22px;letter-spacing:-.015em;margin-bottom:6px}
+h3{font-size:15px;font-weight:600;margin:24px 0 8px}
+p{margin:0 0 10px;color:var(--ink-2)}
+p b{color:var(--ink);font-weight:600}
+.lead{font-size:16px;color:var(--ink)}
+ul.fields{list-style:none;border-top:1px solid var(--rule);margin:8px 0 12px}
+ul.fields li{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr);gap:12px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:14px;color:var(--ink-2)}
+ul.fields li .k{min-width:0}
+ul.plain{padding-left:1.2em;margin:4px 0 12px;color:var(--ink-2);font-size:14px;display:grid;gap:4px}
+ol.howto{padding-left:1.4em;margin:6px 0 12px;color:var(--ink-2);font-size:14px;display:grid;gap:8px}
+ol.howto b{color:var(--ink)}
+.warn{background:var(--heat-bg);border-left:3px solid var(--heat);padding:10px 13px;margin:10px 0 14px;color:var(--ink);font-size:14px}
+code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.88em;background:var(--sunk);padding:1px 5px;overflow-wrap:anywhere}
+.stamp{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);margin-top:22px}
+@media (max-width:640px){
+  .wrap{padding:0 16px 72px}
+  ul.fields li{grid-template-columns:minmax(0,1fr);gap:2px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast">
+  <span class="eyebrow"><a href="./">← 토큰 계량기 · Token Meter</a></span>
+  <h1>개인정보 안내</h1>
+  <p class="jump">한국어 · <a href="#en" lang="en">English below</a></p>
+</header>
+
+<section id="ko" lang="ko">
+  <h2>한 줄 요약</h2>
+  <p class="lead">대화 내용은 나가지 않습니다. 토큰 <b>숫자</b>만 <b>내 GitHub 계정의 공개 gist</b>에 올라가고, 순위판은 그 gist를 읽기만 합니다.</p>
+
+  <h3>무엇이 공개되나</h3>
+  <p><code>node collect.mjs --publish</code>(또는 맥 앱)는 내 계정에 공개 gist 하나를 만들고, 그 안의 <code>token-meter.json</code> 파일에 아래 칸만 담습니다. 올리기 전에 매번 이 목록 밖의 칸을 걸러 내고, 256KB가 넘으면 올리지 않습니다.</p>
+  <ul class="fields">
+    <li><span class="k"><code>login</code></span><span>GitHub 아이디</span></li>
+    <li><span class="k"><code>updatedAt</code></span><span>올린 시각</span></li>
+    <li><span class="k"><code>schema</code>, <code>app</code></span><span>파일 형식 표시(1, token-meter)</span></li>
+  </ul>
+  <p>도구(Claude Code · Codex · Gemini CLI)마다 한 묶음씩:</p>
+  <ul class="fields">
+    <li><span class="k"><code>tool</code></span><span>도구 이름</span></li>
+    <li><span class="k"><code>generatedAt</code></span><span>수집한 시각</span></li>
+    <li><span class="k"><code>tz</code></span><span>컴퓨터의 시간대 이름(예: Asia/Seoul)</span></li>
+    <li><span class="k"><code>range</code></span><span>첫 활동일 · 마지막 활동일 · 활동한 날 수</span></li>
+    <li><span class="k"><code>totals</code></span><span>입력 · 출력 · 캐시 쓰기 · 캐시 읽기 · 총 토큰 · API 환산 금액 · 응답 수</span></li>
+    <li><span class="k"><code>messages</code>, <code>sessions</code>, <code>subagents</code></span><span>응답 · 세션 · 서브에이전트 개수</span></li>
+    <li><span class="k"><code>split</code></span><span>메인 대화와 서브에이전트가 쓴 토큰</span></li>
+    <li><span class="k"><code>byModel</code></span><span>모델 이름별로 위와 같은 숫자</span></li>
+    <li><span class="k"><code>byDay</code></span><span>날짜별 [총 토큰, 출력 토큰, API 환산]</span></li>
+    <li><span class="k"><code>estimated</code></span><span>단가표에 없는 모델이 섞였는지(예/아니오)</span></li>
+  </ul>
+  <p>숫자뿐이지만 알 수 있는 것도 있습니다: <b>어느 날 일했는지</b>(날짜별 기록), <b>대략 어느 지역인지</b>(시간대 이름), <b>어떤 모델을 쓰는지</b>(모델 이름). 도구에 직접 설정한 모델 이름(예: Codex 사용자 지정 모델, 회사 안에서 붙인 배포 이름)도 그대로 공개되니, 숨기고 싶은 이름이라면 참가 전에 확인하세요.</p>
+
+  <h3>공개되지 않는 것</h3>
+  <ul class="plain">
+    <li>대화 내용 · 프롬프트 · 답변 · 코드 (수집기가 내 컴퓨터의 세션 로그를 읽기는 하지만, 거기서 토큰 숫자·모델 이름·날짜만 골라 내고 내용은 어디에도 보내지 않습니다)</li>
+    <li>파일 경로 · 작업 폴더 · 프로젝트 이름과 개수</li>
+    <li>세션 id · 컴퓨터 사용자 이름 · 닉네임</li>
+    <li>그 밖의 진단 정보</li>
+  </ul>
+
+  <h3>gist 수정 기록은 계속 공개로 남습니다</h3>
+  <div class="warn">GitHub gist는 고칠 때마다 <b>이전 판(revision)을 남기고, 누구나 볼 수 있습니다</b>. 수집기가 다시 올릴 때마다 판이 하나씩 쌓입니다. 판 하나만 지울 수는 없고, gist를 통째로 지워야 사라집니다. 지우기 전에 누가 복사해 둔 것까지는 막을 수 없습니다.</div>
+  <p>참가 명단(<code>members.json</code>)은 이 저장소에 커밋됩니다. 명단에서 빠져도 <b>저장소 기록에는 GitHub 아이디와 gist id가 남고</b>, 참가·탈퇴 이슈도 공개입니다.</p>
+
+  <h3>그만두는 법</h3>
+  <ol class="howto">
+    <li><b>탈퇴 이슈 열기</b> — <a href="https://github.com/Min-heee/token-meter/issues/new?template=leave.yml&amp;title=leave" target="_blank" rel="noopener">탈퇴 신청서</a>를 제출하면 자동으로 명단에서 빠집니다.</li>
+    <li><b>gist 지우기</b> — <a href="https://gist.github.com/" target="_blank" rel="noopener">gist.github.com</a>에서 token-meter gist를 열어 Delete, 또는 터미널에서 <code>gh gist delete &lt;gist id&gt;</code>.</li>
+    <li><b>다시 올라가지 않게</b> — 맥 앱을 쓴다면 아래의 ‘올리기’ 체크를 풀거나 앱을 끄세요(고른 간격 — 10분~6시간 — 마다, 숫자가 바뀌었을 때만 올립니다). 수집기가 기억해 둔 gist id는 <code>~/.token-meter/gist.json</code>에 있습니다 — 지워도 됩니다.</li>
+  </ol>
+
+  <h3>이 사이트와 아이폰 앱(준비 중)은 아무것도 수집하지 않습니다</h3>
+  <p>서버가 없습니다. 쿠키·분석 도구·로그인·계정도 없습니다. 브라우저에 저장하는 건 언어 선택 하나뿐입니다. 순위판은 명단과 각자의 gist를 <b>읽기만</b> 하고, 아이폰 앱(준비 중)도 마찬가지입니다.</p>
+  <p>다만 페이지를 열면 브라우저가 GitHub(이 페이지 · 명단 · gist · 프로필 사진)와 Google Fonts(글꼴)에서 파일을 받아 오므로, 두 회사는 보통의 접속 기록(IP 주소 등)을 볼 수 있습니다. 이건 각 회사의 개인정보 처리방침을 따릅니다.</p>
+
+  <h3>문의</h3>
+  <p>궁금한 점은 <a href="https://github.com/Min-heee/token-meter/issues" target="_blank" rel="noopener">저장소 이슈</a>로 남겨 주세요.</p>
+  <p class="stamp">2026-10-14 기준</p>
+</section>
+
+<section id="en" lang="en">
+  <h2>Privacy, in English</h2>
+  <p class="lead">Your conversations never leave your machine. Only token <b>numbers</b> go to <b>a public gist in your own GitHub account</b>, and the leaderboard only reads that gist.</p>
+
+  <h3>What is published</h3>
+  <p><code>node collect.mjs --publish</code> (or the Mac app) creates one public gist in your account with a single file, <code>token-meter.json</code>, holding only the fields below. Everything else is filtered out before every upload, and nothing over 256 KB is uploaded.</p>
+  <ul class="fields">
+    <li><span class="k"><code>login</code></span><span>your GitHub login</span></li>
+    <li><span class="k"><code>updatedAt</code></span><span>when it was uploaded</span></li>
+    <li><span class="k"><code>schema</code>, <code>app</code></span><span>format markers (1, token-meter)</span></li>
+  </ul>
+  <p>One block per tool (Claude Code · Codex · Gemini CLI):</p>
+  <ul class="fields">
+    <li><span class="k"><code>tool</code></span><span>tool name</span></li>
+    <li><span class="k"><code>generatedAt</code></span><span>when it was collected</span></li>
+    <li><span class="k"><code>tz</code></span><span>your computer's time zone name (e.g. Asia/Seoul)</span></li>
+    <li><span class="k"><code>range</code></span><span>first and last active day, number of active days</span></li>
+    <li><span class="k"><code>totals</code></span><span>input · output · cache write · cache read · total tokens · API-equivalent cost · responses</span></li>
+    <li><span class="k"><code>messages</code>, <code>sessions</code>, <code>subagents</code></span><span>counts of responses, sessions and subagents</span></li>
+    <li><span class="k"><code>split</code></span><span>tokens used by the main conversation vs subagents</span></li>
+    <li><span class="k"><code>byModel</code></span><span>the same numbers per model name</span></li>
+    <li><span class="k"><code>byDay</code></span><span>per date: [total tokens, output tokens, API-equivalent]</span></li>
+    <li><span class="k"><code>estimated</code></span><span>whether a model missing from the price table was involved (yes/no)</span></li>
+  </ul>
+  <p>Numbers still say something: <b>which days you worked</b> (daily records), <b>roughly where you are</b> (time zone name) and <b>which models you use</b> (model names). A model name you configured yourself (for example a custom Codex model or an internal deployment name at work) is published as is, so check it before joining if it should stay private.</p>
+
+  <h3>What is never published</h3>
+  <ul class="plain">
+    <li>conversations, prompts, replies, code (the collector reads your local session logs, but keeps only token counts, model names and dates, and sends no content anywhere)</li>
+    <li>file paths, working folders, project names or project counts</li>
+    <li>session ids, your computer user name, nicknames</li>
+    <li>any other diagnostics</li>
+  </ul>
+
+  <h3>Gist revisions stay public</h3>
+  <div class="warn">A GitHub gist <b>keeps every earlier revision, and anyone can read them</b>. Each re-upload adds one. You cannot delete a single revision — only the whole gist — and nothing can undo a copy someone made before you deleted it.</div>
+  <p>The member list (<code>members.json</code>) is committed to this repository. Leaving removes you from the list, but <b>your login and gist id stay in the repository history</b>, and join/leave issues are public too.</p>
+
+  <h3>How to leave</h3>
+  <ol class="howto">
+    <li><b>Open a leave issue</b> — submit the <a href="https://github.com/Min-heee/token-meter/issues/new?template=leave.yml&amp;title=leave" target="_blank" rel="noopener">leave form</a> and you are removed from the list automatically.</li>
+    <li><b>Delete the gist</b> — open your token-meter gist on <a href="https://gist.github.com/" target="_blank" rel="noopener">gist.github.com</a> and choose Delete, or run <code>gh gist delete &lt;gist id&gt;</code>.</li>
+    <li><b>Stop re-uploading</b> — if you use the Mac app, untick “올리기” (upload) or quit it (it uploads at the interval you chose — 10 minutes to 6 hours — and only when the numbers changed). The collector remembers your gist id in <code>~/.token-meter/gist.json</code>; you can delete that file.</li>
+  </ol>
+
+  <h3>This site and the iPhone app (coming) collect nothing</h3>
+  <p>There is no server, and no cookies, analytics, sign-in or accounts. The only thing stored in your browser is your language choice. The leaderboard only <b>reads</b> the member list and each gist, and so will the iPhone app (coming).</p>
+  <p>Opening the page does make your browser download files from GitHub (this page, the member list, the gists, profile pictures) and Google Fonts (typefaces), so those two companies see ordinary request data such as your IP address, under their own privacy policies.</p>
+
+  <h3>Questions</h3>
+  <p>Open an <a href="https://github.com/Min-heee/token-meter/issues" target="_blank" rel="noopener">issue on the repository</a>.</p>
+  <p class="stamp">As of 2026-10-14</p>
+</section>
+</div>
+</body>
+</html>

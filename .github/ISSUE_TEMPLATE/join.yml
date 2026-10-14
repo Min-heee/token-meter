@@ -1,0 +1,30 @@
+# 순위판 참가 신청. scripts/join.mjs 가 제목(join)과 아래 gist 칸을 읽는다.
+# 수집기(node collect.mjs --publish)가 보여 주는 링크는 ?template=join.yml&title=join&gist=<id> 로
+# 이 칸(id: gist)을 미리 채운다 — id 를 바꾸면 그 링크가 빈 칸을 연다.
+name: 순위판 참가 · Join the leaderboard
+description: 내 gist를 순위판 명단에 올려요 · Put your gist on the leaderboard members list
+title: join
+labels: [join]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **참가 방법**
+        1. 터미널에서 `node collect.mjs --publish` 를 실행해요(먼저 `gh auth login`). 내 GitHub 계정에 공개 gist `token-meter.json` 이 생겨요 — 토큰 숫자만 올라가요.
+        2. 그 명령이 보여 주는 참가 링크로 열면 아래 칸이 채워져 있어요. 그대로 **Submit new issue** 를 누르면 봇이 확인하고 명단에 넣은 뒤 이슈를 닫아요.
+
+        제목은 `join` 그대로 두세요. 무엇이 공개되는지는 [공개 범위 안내](https://min-heee.github.io/token-meter/privacy.html)에 있어요.
+
+        **How to join**
+        1. Run `node collect.mjs --publish` in a terminal (after `gh auth login`). It creates a public gist `token-meter.json` in your GitHub account — numbers only.
+        2. Open the join link it prints; the field below is already filled in. Press **Submit new issue**, and a bot checks it, adds you and closes the issue.
+
+        Keep the title as `join`. See [what is published](https://min-heee.github.io/token-meter/privacy.html).
+  - type: input
+    id: gist
+    attributes:
+      label: Gist 주소 또는 ID · Gist URL or ID
+      description: 이 이슈를 여는 계정의 gist여야 해요 · It must be a gist in the account opening this issue
+      placeholder: https://gist.github.com/<login>/<gist id>
+    validations:
+      required: true
