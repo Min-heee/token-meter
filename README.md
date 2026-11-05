@@ -46,4 +46,6 @@ Claude Code · Codex · Gemini CLI 를 얼마나 썼는지 토큰 수로 세고,
 
 `npm test` (Node 20+). 기여·문의는 이슈로.
 
+코드는 AI 코딩 도구(Claude Code)가 썼고, 무엇을 만들지 정하고 써 보며 고친 것은 제 몫입니다.
+
 MIT License
