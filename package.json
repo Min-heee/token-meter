@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Claude Code · Codex · Gemini CLI 토큰 사용량 — 서버 없는 깃허브 순위판",
-  "scripts": { "test": "node --test test/" },
+  "scripts": { "test": "node --test test/*.test.mjs" },
   "engines": { "node": ">=20" },
   "license": "MIT"
 }

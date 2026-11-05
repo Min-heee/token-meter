@@ -241,8 +241,10 @@ function collectClaude() {
   const files = walk(CLAUDE_ROOT);
   if (!files.length) return null;
 
+  // 로그의 모델 이름에는 날짜가 붙기도 한다(claude-haiku-4-5-20251001) — 단가표는 날짜 없는 이름으로 찾는다
+  const priceOf = (model) => CLAUDE_PRICES[model] || CLAUDE_PRICES[String(model).replace(/-\d{8}$/, '')] || null;
   const rate = (model, day, speed) => {
-    const p = CLAUDE_PRICES[model] || CLAUDE_FALLBACK;
+    const p = priceOf(model) || CLAUDE_FALLBACK;
     if (speed === 'fast' && p.fast) return p.fast;
     if (p.intro && p.introUntil && day && day <= p.introUntil) return p.intro;
     return { in: p.in, out: p.out };
@@ -302,7 +304,7 @@ function collectClaude() {
     for (const [k, v] of [['input', r.input], ['output', r.output], ['cacheWrite', cacheWrite],
                           ['cacheRead', r.read], ['total', total], ['cost', cost]]) { totals[k] += v; m[k] += v; }
     totals.messages++; m.messages++;
-    if (!CLAUDE_PRICES[r.model]) unknown += total;
+    if (!priceOf(r.model)) unknown += total;
     split[r.sub ? 'sub' : 'main'] += total;
     if (r.sub && r.agentId) agents.add(r.agentId);
     if (r.day) { const b = (byDay[r.day] ||= [0, 0, 0]); b[0] += total; b[1] += r.output; b[2] += cost; }
@@ -347,7 +349,7 @@ function collectCodex() {
         continue;
       }
       if (d.type === 'turn_context' && p.model) { model = p.model; continue; }
-      if (p.type === 'agent_message') { totals.messages++; continue; }
+      if (p.type === 'agent_message') { if (inRange(localDay(d.timestamp))) totals.messages++; continue; }
       if (p.type !== 'token_count' || !p.info) continue;
 
       const tt = p.info.total_token_usage;
@@ -408,8 +410,9 @@ function collectGemini() {
 
   const rate = (model) => {
     if (model && GEMINI_PRICES[model]) return GEMINI_PRICES[model];
-    if (model) for (const k of Object.keys(GEMINI_PRICES)) if (model.startsWith(k)) return GEMINI_PRICES[k];
-    return GEMINI_FALLBACK;
+    // 가장 긴 접두어로 — 'gemini-2.5-flash-lite-…' 가 먼저 나오는 'gemini-2.5-flash' 에 걸리지 않게
+    const k = model ? Object.keys(GEMINI_PRICES).filter((p) => model.startsWith(p)).sort((a, b) => b.length - a.length)[0] : null;
+    return k ? GEMINI_PRICES[k] : GEMINI_FALLBACK;
   };
 
   // 세션 재구성: sessionId -> { kind, project, msgs: Map(id -> msg), fmt }
