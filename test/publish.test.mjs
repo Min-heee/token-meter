@@ -179,6 +179,23 @@ function writeCodex(dir, model = 'gpt-5.5') {
   fs.writeFileSync(f, lines.map((l) => JSON.stringify(l)).join('\n') + '\n');
 }
 
+/** 모델 이름마다 Claude 응답 하나(입력 100만)·Gemini 응답 하나(입력 20만). 둘 다 단가표 밖 이름이면 기본 단가로 5달러·0.25달러 */
+function writeModelNames(logs, { claude = [], gemini = [] }) {
+  const cf = path.join(logs, 'claude', '-Users-someone-ODD', 'ODD-SESSION.jsonl');
+  fs.mkdirSync(path.dirname(cf), { recursive: true });
+  fs.writeFileSync(cf, claude.map((model, i) => JSON.stringify({
+    type: 'assistant', sessionId: 'ODD-SESSION', cwd: '/Users/someone/ODD', timestamp: '2026-10-13T06:00:00.000Z',
+    message: { id: `odd_${i}`, model, role: 'assistant', usage: { input_tokens: 1_000_000, output_tokens: 0 } },
+  })).join('\n') + '\n');
+  if (!gemini.length) return;
+  const gf = path.join(logs, 'gemini', 'tmp', 'h0', 'chats', 'session-odd.jsonl');
+  fs.mkdirSync(path.dirname(gf), { recursive: true });
+  fs.writeFileSync(gf, [{ sessionId: 'ODD-GEMINI', projectHash: 'h0' }, ...gemini.map((model, i) => ({
+    id: `g${i}`, type: 'gemini', model, timestamp: '2026-10-13T06:00:00.000Z', tokens: { input: 200_000, cached: 0, output: 0 },
+  }))].map((l) => JSON.stringify(l)).join('\n') + '\n');
+}
+const own = (o, k) => (Object.hasOwn(o, k) ? o[k] : undefined);
+
 /** 테스트 하나의 세상: 임시 HOME, 가짜 gh·pbcopy, 로그 픽스처, collect.mjs 사본(옆에 뭘 쓰는지 보려고) */
 function world({ scenario = {}, cache = null, claudeDays = ['2026-10-12', '2026-10-13'], codex = true, codexModel = 'gpt-5.5', gh = true } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tm-publish-'));
@@ -546,6 +563,52 @@ test('Codex 모델 이름이 로컬 파일 경로여도 경로는 올라가지 �
   } finally { w.cleanup(); }
 });
 
+test('모델 이름이 "__proto__"·"constructor"·"toString" 이어도 모델별로 따로 세고 기본 단가로 환산한다', async () => {
+  const w = world({ codexModel: 'constructor' });
+  try {
+    writeModelNames(w.logs, { claude: ['__proto__', 'constructor', 'toString'], gemini: ['__proto__', 'toString'] });
+    const res = await run(w, ['--json-only']);
+    assert.equal(res.code, 0, res.err);
+    const by = Object.fromEntries(JSON.parse(res.out).map((e) => [e.tool, e]));
+    const odd = { input: 1_000_000, output: 0, cacheWrite: 0, cacheRead: 0, total: 1_000_000, cost: 5, messages: 1 };
+    assert.deepEqual(sorted(by.claude.byModel), ['__proto__', 'claude-opus-4-8', 'constructor', 'toString']);
+    for (const n of ['__proto__', 'constructor', 'toString']) assert.deepEqual(own(by.claude.byModel, n), odd, n);
+    assert.equal(by.claude.estimated, true);   // 단가표에 없는 이름이다
+    assert.equal(by.claude.totals.messages, 2 + 3);
+    assert.equal(by.claude.totals.cost, Math.round((by.claude.byModel['claude-opus-4-8'].cost + 15) * 100) / 100);
+    assert.deepEqual(sorted(by.codex.byModel), ['constructor']);
+    assert.equal(own(by.codex.byModel, 'constructor').cost, 0.01);
+    assert.equal(by.codex.estimated, true);
+    assert.deepEqual(sorted(by.gemini.byModel), ['__proto__', 'toString']);
+    for (const n of ['__proto__', 'toString']) assert.equal(own(by.gemini.byModel, n).cost, 0.25, n);
+    assert.equal(by.gemini.totals.cost, 0.5);
+
+    const human = await run(w, []);
+    assert.equal(human.code, 0, human.err);
+    for (const n of ['__proto__', 'constructor', 'toString']) assert.match(human.out, new RegExp(`^ {4}${n} +█+ +100만 +\\$5$`, 'm'), n);
+  } finally { w.cleanup(); }
+});
+
+test('모델 이름이 "__proto__" 여도 --publish 가 gh 를 띄운다 — Object.prototype 에 NaN 이 써져 spawnSync 가 options.stdio[0] 에서 멈추던 문제', async () => {
+  const w = world({ codexModel: 'constructor' });
+  try {
+    writeModelNames(w.logs, { claude: ['__proto__', 'constructor'] });
+    const res = await run(w, ['--publish', '--json']);
+    assert.equal(res.code, 0, res.out + res.err);
+    assert.equal(oneJson(res.out).ok, true);
+    const post = w.calls().find((c) => c.argv.includes('POST'));
+    const doc = uploaded(post);
+    assertWhitelisted(doc);
+    const [claude, codex] = doc.entries;
+    // "__proto__" 는 순위판이 거절하는 이름이라 "(other)" 로, "constructor" 는 그대로 — 둘 다 기본 단가로 환산된다
+    assert.deepEqual(sorted(claude.byModel), ['(other)', 'claude-opus-4-8', 'constructor']);
+    assert.equal(claude.byModel['(other)'].cost, 5);
+    assert.equal(own(claude.byModel, 'constructor').cost, 5);
+    assert.deepEqual(sorted(codex.byModel), ['constructor']);
+    assert.equal(own(codex.byModel, 'constructor').cost, 0.01);
+  } finally { w.cleanup(); }
+});
+
 test('올린 내용은 순위판(board.mjs)과 참가 검사(join-core.mjs)를 그대로 통과한다', async (t) => {
   // 두 파일은 다른 담당이 고친다 — 아직 없거나 꼴이 다르면 이 대조만 건너뛴다
   let board, join;
@@ -556,12 +619,14 @@ test('올린 내용은 순위판(board.mjs)과 참가 검사(join-core.mjs)를 �
   if (typeof board.validatePayload !== 'function' || typeof join.checkContent !== 'function') return t.skip('검사 함수가 없음');
   const weird = {
     ...dirtyEntry(), tool: 'codex', split: null,
-    byModel: { ...JSON.parse('{"__proto__":{"total":5}}'), '/Users/someone/m.gguf': { total: 1 }, 'gpt-5.5': { total: 9, cost: 0.12 } },
+    byModel: { ...JSON.parse('{"__proto__":{"total":5}}'), '/Users/someone/m.gguf': { total: 1 }, 'gpt-5.5': { total: 9, cost: 0.12 },
+      constructor: { total: 3, cost: 0.01 }, toString: { total: 2 } },
   };
   const gemini = { ...dirtyEntry(), tool: 'gemini', tz: undefined, generatedAt: undefined };
   const text = serializePayload(buildPayload([dirtyEntry(), weird, gemini], LOGIN));
   const v = board.validatePayload(JSON.parse(text), { login: LOGIN.toLowerCase() });
   assert.deepEqual(v.entries.map((e) => e.tool), ['claude', 'codex', 'gemini']);
+  assert.deepEqual(sorted(v.entries[1].byModel), ['(other)', 'constructor', 'gpt-5.5', 'toString']);
   assert.deepEqual(join.checkContent(text, LOGIN.toUpperCase()), { ok: true });
 });
 

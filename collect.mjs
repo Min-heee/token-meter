@@ -64,9 +64,12 @@ const QUIET = has('json-only') || has('json');
 // ── 단가 (USD / 1M tokens) ──────────────────────────────────────────────
 // 실제 청구액이 아니라 "각 벤더 API 단가로 환산하면 얼마"인지 보는 참고값이다.
 // 구독(Max/Pro/ChatGPT Plus)으로 쓴 토큰은 이 금액이 청구되지 않는다.
+// 표는 로그에 적힌 모델 이름으로 찾는다 — __proto__: null 이 없으면 "constructor"·"toString" 같은
+// 이름이 Object.prototype 의 함수를 단가로 집어 와 환산액이 NaN 이 된다.
 
 // Anthropic 1st-party, 2026-08 기준
 const CLAUDE_PRICES = {
+  __proto__: null,
   'claude-fable-5':    { in: 10, out: 50 },
   'claude-mythos-5':   { in: 10, out: 50 },
   'claude-opus-5':     { in: 5,  out: 25, fast: { in: 10, out: 50 } },
@@ -86,6 +89,7 @@ const CACHE_READ = 0.1;
 
 // OpenAI, developers.openai.com/api/docs/pricing 2026-08 기준
 const CODEX_PRICES = {
+  __proto__: null,
   'gpt-5.5':       { in: 5,    cached: 0.5,   out: 30 },
   'gpt-5.4':       { in: 2.5,  cached: 0.25,  out: 15 },
   'gpt-5.3-codex': { in: 1.75, cached: 0.175, out: 14 },
@@ -99,6 +103,7 @@ const LONG_CTX = 272_000;      // 초과 요청은 입력 2×, 출력 1.5×
 // Google Gemini API paid tier, ai.google.dev/gemini-api/docs/pricing 2026-08 기준.
 // 주의: Gemini CLI를 구글 계정 OAuth로 쓰면 실제로는 무료 티어 — 환산액은 참고값.
 const GEMINI_PRICES = {
+  __proto__: null,
   'gemini-2.5-pro':         { in: 1.25, cached: 0.125, out: 10 },
   'gemini-2.5-flash':       { in: 0.3,  cached: 0.03,  out: 2.5 },
   'gemini-2.5-flash-lite':  { in: 0.1,  cached: 0.01,  out: 0.4 },
@@ -156,6 +161,10 @@ const localDay = (iso) => {
 };
 const inRange = (day) => !(SINCE && day && day < SINCE) && !(UNTIL && day && day > UNTIL);
 const blank = () => ({ input: 0, output: 0, cacheWrite: 0, cacheRead: 0, total: 0, cost: 0, messages: 0 });
+// 모델 이름 → 합계. 이름은 로그에서 그대로 오므로 원형 없는 객체에 모은다 — 보통 {} 면 "__proto__" 가
+// Object.prototype 을 집어 와 거기에 NaN 을 쓰고(그 뒤 spawnSync 가 options.stdio[0] 에서 멈춘다),
+// "constructor"·"toString" 은 원형의 함수에 더해져 모델별 목록에서 빠진다. JSON 으로는 {} 와 똑같이 나간다.
+const byName = () => Object.create(null);
 
 function walk(dir, out = [], exts = ['.jsonl']) {
   let ents;
@@ -286,7 +295,7 @@ function collectClaude() {
   }
   if (!records.size) return null;
 
-  const totals = blank(), byModel = {}, byDay = {};
+  const totals = blank(), byModel = byName(), byDay = {};
   const sessions = new Set(), projects = new Set(), agents = new Set();
   const split = { main: 0, sub: 0 };
   let unknown = 0;
@@ -328,7 +337,7 @@ function collectCodex() {
   files.sort();   // rollout-<ISO 타임스탬프> → 이름순 = 시간순
 
   const rate = (model) => CODEX_PRICES[model] || CODEX_FALLBACK;
-  const totals = blank(), byModel = {}, byDay = {};
+  const totals = blank(), byModel = byName(), byDay = {};
   const sessions = new Set(), projects = new Set();
   const prevBySession = new Map();   // 세션이 여러 파일에 걸칠 때 누적값 이어받기
   let unknown = 0, events = 0, drops = 0;
@@ -454,7 +463,7 @@ function collectGemini() {
   }
   if (!sessions.size) return null;
 
-  const totals = blank(), byModel = {}, byDay = {};
+  const totals = blank(), byModel = byName(), byDay = {};
   const sessionIds = new Set(), projects = new Set(), subs = new Set();
   const split = { main: 0, sub: 0 };
   let unknown = 0;
