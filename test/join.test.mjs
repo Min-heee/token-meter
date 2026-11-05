@@ -296,9 +296,10 @@ test('fetchGist: 404·403·네트워크 오류·주인 다름·파일 없음·�
 // ── 명단 ────────────────────────────────────────────────────────────────
 const M = (login, gist = ID, joinedAt = '2026-10-01T00:00:00.000Z') => ({ login, gist, joinedAt });
 
-test('명단: 처음 파일은 빈 명단이고, 직렬화 결과와 글자까지 같다', () => {
+test('명단: 저장소의 명단 파일은 읽히고 직렬화 결과와 글자까지 같으며, 빈 명단은 정해진 꼴이다', () => {
+  // 참가가 생기면 이 파일은 바뀐다 — 내용이 비었는지가 아니라, 읽고 다시 써도 글자가 그대로인지를 본다
   const text = fs.readFileSync(path.join(HERE, '..', 'docs', 'members.json'), 'utf8');
-  assert.deepEqual(parseMembers(text), []);
+  assert.equal(serializeMembers(parseMembers(text)), text);
   assert.equal(serializeMembers([]), '{\n  "schema": 1,\n  "members": []\n}\n');
 });
 
